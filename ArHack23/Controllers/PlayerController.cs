@@ -26,18 +26,16 @@ public class PlayerController : ControllerBase
         return player;
     }
 
-    [HttpPost]
-    public IActionResult Create(Player player)
+    [HttpPost("/register")]
+    public ActionResult<Player> Create(Player player)
     {
-        GameService.Add(player);
-        return CreatedAtAction(nameof(Get), new { id = player.Id }, player);
+        return GameService.Add(player);
     }
 
-    [HttpPut("{id}")]
-    public IActionResult Update(int id, Player player)
+    [HttpPost("/update")]
+    public ActionResult<List<Player>> Update(Player player)
     {
-        if (id != player.Id)
-            return BadRequest();
+        var id = player.Id;
 
         var existingPizza = GameService.Get(id);
 
@@ -46,8 +44,21 @@ public class PlayerController : ControllerBase
 
         GameService.Update(player);
 
-        return NoContent();
+        return GameService.GetAll();
     }
+
+    [HttpGet("/flags")]
+    public ActionResult<Flag> GetFlag()
+    {
+        return GameService.flag;
+    }
+
+    [HttpGet("/gamestate/{id}")]
+    public ActionResult<GameState> GetGameState(int id)
+    {
+        return GameService.GetState(id);
+    }
+
 
     [HttpDelete("{id}")]
     public IActionResult Delete(int id)
