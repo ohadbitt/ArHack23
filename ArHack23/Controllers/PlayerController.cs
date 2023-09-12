@@ -28,10 +28,10 @@ public class PlayerController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult<GameState> Create(Player player)
+    public ActionResult<Player> Create(Player player)
     {
         GameService.Add(player);
-        return GameService.GetState();
+        return player;
     }
 
     [HttpPut("{id}")]
@@ -71,12 +71,6 @@ public class PlayerController : ControllerBase
         return NoContent();
     }
 
-    //[Route("kill")] // no need - just update
-    //public ActionResult Kill(int id)
-    //{
-    //    var p = GameService.GetPlayer(id);
-    //    p.Alive = false;
-    //}
     [HttpGet("/flags")]
     public ActionResult<Flags> GetFlags()
     {
