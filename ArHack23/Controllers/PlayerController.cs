@@ -12,14 +12,11 @@ namespace ArHack23.Controllers;
 [Route("Players")]
 public class PlayerController : ControllerBase
 {
-    private IKustoIngestClient cli;
+    public static Player lastUp;
 
     public PlayerController()
     {
-        var csb = new KustoConnectionStringBuilder("https://ohadev.westeurope.dev.kusto.windows.net/").WithAadApplicationKeyAuthentication("d5e0a24c-3a09-40ce-a1d6-dc5ab58dae66", "AfG8Q~6Yj4Wo4ZhIS8GdKThGRwc3THRFjM.Lva1R", "microsoft.com");
-        var ingest = new KustoConnectionStringBuilder("https://ingest-ohadev.westeurope.dev.kusto.windows.net/").WithAadApplicationKeyAuthentication("d5e0a24c-3a09-40ce-a1d6-dc5ab58dae66", "AfG8Q~6Yj4Wo4ZhIS8GdKThGRwc3THRFjM.Lva1R", "microsoft.com");
-
-        cli = KustoIngestFactory.CreateManagedStreamingIngestClient(csb, ingest);
+      
     }
 
     [HttpGet]
@@ -46,6 +43,7 @@ public class PlayerController : ControllerBase
     [HttpPut("{id}")]
     public ActionResult<GameState> Update(int id, Player player)
     {
+        lastUp = player;
         if (id != player.Id)
             return BadRequest();
 
@@ -93,22 +91,5 @@ public class PlayerController : ControllerBase
         return NoContent();
     }
 
-    private void log(string rec)
-    {
-        using (var mem = new MemoryStream())
-        {
-            mem.Write(Encoding.UTF8.GetBytes(rec));
-            mem.Seek(0, SeekOrigin.Begin);
-            var res = cli.IngestFromStreamAsync(mem, new KustoIngestionProperties("ohtst", "Hack")).Result;
-            Console.WriteLine(res);
-        }
-    }
-
-    [HttpPost("/logs")]
-    public IActionResult AddLog(string log)
-    {
-        this.log(log);
-        return NoContent();
-    }
-
+  
 }
