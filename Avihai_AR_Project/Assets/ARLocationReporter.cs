@@ -40,64 +40,64 @@ public class Player
         }
     }
 
-        public bool IsCloseToLocation(Vec3 location)
-        {
-            return Vector3.Distance(Location.ToVector3(), location.ToVector3()) < 1;
-        }
-    }
-    public class Flags
+    public bool IsCloseToLocation(Vec3 location)
     {
-        public Vec3 RedFlagBaseLocation { get; set; }
-        public Vec3 BlueFlagBaseLocation { get; set; }
-
+        return Vector3.Distance(Location.ToVector3(), location.ToVector3()) < 1;
     }
-    public class Vec3
+}
+public class Flags
+{
+    public Vec3 RedFlagBaseLocation { get; set; }
+    public Vec3 BlueFlagBaseLocation { get; set; }
+
+}
+public class Vec3
+{
+    public Vec3(float x, float y, float z)
     {
-        public Vec3(float x, float y, float z)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
-        public Vec3(Vector3 v) : this(v.x, v.y, v.z) { }
-        public Vec3()
-        {
+        X = x;
+        Y = y;
+        Z = z;
+    }
+    public Vec3(Vector3 v) : this(v.x, v.y, v.z) { }
+    public Vec3()
+    {
 
-        }
-
-        public Vector3 ToVector3()
-        {
-            return new Vector3(X, Y, Z);
-        }
-        public float X { get; set; }
-        public float Y { get; set; }
-        public float Z { get; set; }
     }
 
-    public class GameState
+    public Vector3 ToVector3()
     {
-        public List<Player> Players { get; set; }
-        public GameStatus Status { get; set; }
-        public enum GameStatus
-        {
-            Playing,
-            RedWin,
-            BlueWin
-        }
-
+        return new Vector3(X, Y, Z);
     }
-    public class ARLocationReporter : MonoBehaviour
-    {
-        public TextMeshPro text;
-        public GameObject ARSession;
-        public GameObject enemyPrefub;
-        public GameObject flagPrefab;
+    public float X { get; set; }
+    public float Y { get; set; }
+    public float Z { get; set; }
+}
 
-    private float m_timePassed;
+public class GameState
+{
+    public List<Player> Players { get; set; }
+    public GameStatus Status { get; set; }
+    public enum GameStatus
+    {
+        Playing,
+        RedWin,
+        BlueWin
+    }
+
+}
+public class ARLocationReporter : MonoBehaviour
+{
+    public TextMeshPro text;
+    public GameObject ARSession;
+    public GameObject bluePrefab;
+    public GameObject redPrefab;
+    public GameObject redFlagPrefab;
+    public GameObject blueFlagPrefab;
+
     public static string name;
     private Player m_player;
     private readonly Dictionary<int, GameObject> m_players = new();
-    private GameObject m_flag;
     private GameState m_lastGameState = new();
     private readonly HttpClient m_client = new()
     {
@@ -119,13 +119,14 @@ public class Player
             var content = response.Content.ReadAsStringAsync().Result;
             var flag = JsonConvert.DeserializeObject<Flags>(content);
             var position = flag.BlueFlagBaseLocation.ToVector3();
-            m_flag = Instantiate(flagPrefab, position, Quaternion.identity);
-        }
+            Instantiate(blueFlagPrefab, position, Quaternion.identity);
+            position = flag.RedFlagBaseLocation.ToVector3();
+        Instantiate(redFlagPrefab, position, Quaternion.identity);
+    }
 
-        private void Register()
+    private void Register()
         {
-            LogAsync("Registering");
-            var player = new Player { Team = Color.Blue };
+            var player = new Player {  };
             var response = m_client.PostAsync("/players", new StringContent(JsonConvert.SerializeObject(player), Encoding.UTF8, "application/json")).Result;
             var content = response.Content.ReadAsStringAsync().Result;
             var players = JsonConvert.DeserializeObject<Player>(content);
@@ -146,40 +147,46 @@ public class Player
             return;
         }
 
-            var otherPlayerData = m_lastGameState.Players;
-            if (otherPlayerData == null)
+        var otherPlayerData = m_lastGameState.Players;
+        if (otherPlayerData == null)
+        {
+            return;
+        }
+        if (!otherPlayerData.Any(p => p.Id == m_player.Id))
+        {
+            Dead();
+        }
+
+        foreach (var player in otherPlayerData)
+        {
+            if (player.Id == m_player.Id)
             {
-                return;
-            }
-            if (!otherPlayerData.Any(p => p.Id == m_player.Id))
-            {
-                Dead();
+                continue;
             }
 
-            foreach (var player in otherPlayerData)
+            if (m_players.ContainsKey(player.Id))
             {
-                if (player.Id == m_player.Id)
-                {
-                    continue;
-                }
-
-                if (m_players.ContainsKey(player.Id))
-                {
-                    m_players[player.Id].transform.position = player.Location.ToVector3();
-                }
-                else
-                {
-                    var newPlayer = Instantiate(enemyPrefub, player.Location.ToVector3(), Quaternion.identity);
-                    m_players.Add(player.Id, newPlayer);
-                }
+                m_players[player.Id].transform.position = player.Location.ToVector3();
+            }
+            else
+            {
+                var prefab = player.Team == Color.Blue ? bluePrefab : redPrefab;
+                var newPlayer = Instantiate(prefab, player.Location.ToVector3(), Quaternion.identity);
+                m_players.Add(player.Id, newPlayer);
             }
         }
+    }
 
     public void Kill(GameObject obj)
     {
         try
         {
             var playerToKill = m_players.First(x => x.Value == obj).Key;
+            var playterData = m_lastGameState.Players.First(p => p.Id == playerToKill);
+            if (playterData.Team == m_player.Team)
+            {
+                return;
+            }
             m_client.DeleteAsync($"/players/{playerToKill}");
             Destroy(obj);
             m_players.Remove(playerToKill);
@@ -204,7 +211,6 @@ public class Player
             {
                 m_player.Name = name;
                 string playerJson = JsonConvert.SerializeObject(m_player);
-                await LogAsync("updating:" + playerJson);
                 var content = new StringContent(playerJson, Encoding.UTF8, "application/json");
                 var response = await m_client.PutAsync($"/players/{m_player.Id}", content);
                 text.text = $"{response.StatusCode}";
@@ -212,34 +218,21 @@ public class Player
                 m_lastGameState = JsonConvert.DeserializeObject<GameState>(resContent);
             } catch (Exception ex)
             {
-                await LogAsync($"UpdateOffline got exception: {ex}");
+                Debug.Log($"UpdateOffline got exception: {ex}");
             }
             await Task.Delay(100);
         }
     }
 
-        private void Lose()
-        {
-            text.text = "LOSE";
-            text.transform.position = transform.position;
-        }
-
-        private void Win()
-        {
-            text.text = "WIN";
-            text.transform.position = transform.position;
-        }
-
-        private async Task LogAsync(string rec)
-        {
-            try
-            {
-                _ = await m_client.PostAsync("/logs", new StringContent($"\"{m_id},{rec}\"", Encoding.UTF8, "application/json"));
-
-            }
-            catch (Exception ex)
-            {
-                Debug.Log(ex);
-            }
-        }
+    private void Lose()
+    {
+        text.text = "LOSE";
+        text.transform.position = transform.position;
     }
+
+    private void Win()
+    {
+        text.text = "WIN";
+        text.transform.position = transform.position;
+    }
+}
