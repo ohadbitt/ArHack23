@@ -12,11 +12,13 @@ using System.Timers;
 using TMPro;
 using UnityEngine;
 
-public enum Color
+namespace ArHack
 {
-    Red = 1,
-    Blue = 2,
-}
+    public enum Color
+    {
+        Red = 1,
+        Blue = 2,
+    }
 
 public class Player
 {
@@ -40,61 +42,62 @@ public class Player
         }
     }
 
-    public bool IsCloseToLocation(Vec3 location)
+        public bool IsCloseToLocation(Vec3 location)
+        {
+            return Vector3.Distance(Location.ToVector3(), location.ToVector3()) < 1;
+        }
+    }
+    public class Flags
     {
-        return Vector3.Distance(Location.ToVector3(), location.ToVector3()) < 1;
+        public Vec3 RedFlagBaseLocation { get; set; }
+        public Vec3 BlueFlagBaseLocation { get; set; }
+
+    }
+    public class Vec3
+    {
+        public Vec3(float x, float y, float z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+        public Vec3(Vector3 v) : this(v.x, v.y, v.z) { }
+        public Vec3()
+        {
+
+        }
+
+        public Vector3 ToVector3()
+        {
+            return new Vector3(X, Y, Z);
+        }
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Z { get; set; }
+    }
+
+    public class GameState
+    {
+        public List<Player> Players { get; set; }
+        public GameStatus Status { get; set; }
+        public enum GameStatus
+        {
+            Playing,
+            RedWin,
+            BlueWin
+        }
+
     }
 }
-public class Flags
-{
-    public Vec3 RedFlagBaseLocation { get; set; }
-    public Vec3 BlueFlagBaseLocation { get; set; }
-
-}
-public class Vec3
-{
-    public Vec3(float x, float y, float z)
+    public class ARLocationReporter : MonoBehaviour
     {
-        X = x;
-        Y = y;
-        Z = z;
-    }
-    public Vec3(Vector3 v) : this(v.x, v.y, v.z) { }
-    public Vec3()
-    {
-
-    }
-
-    public Vector3 ToVector3()
-    {
-        return new Vector3(X, Y, Z);
-    }
-    public float X { get; set; }
-    public float Y { get; set; }
-    public float Z { get; set; }
-}
-
-public class GameState
-{
-    public List<Player> Players { get; set; }
-    public GameStatus Status { get; set; }
-    public enum GameStatus
-    {
-        Playing,
-        RedWin,
-        BlueWin
-    }
-
-}
-
-public class ARLocationReporter : MonoBehaviour
-{
-    public TextMeshPro text;
-    public GameObject ARSession;
-    public GameObject enemyPrefub;
-    public GameObject flagPrefab;
+        public TextMeshPro text;
+        public GameObject ARSession;
+        public GameObject enemyPrefub;
+        public GameObject flagPrefab;
 
     private float m_timePassed;
+    public static string name = "Moshe";
     private Player m_player;
     private readonly Dictionary<int, GameObject> m_players = new();
     private GameObject m_flag;
@@ -113,26 +116,26 @@ public class ARLocationReporter : MonoBehaviour
         Task.Run(UpdateOffline);
     }
 
-    private void InitiateFlag()
-    {
-        var response = m_client.GetAsync("/flags").Result;
-        var content = response.Content.ReadAsStringAsync().Result;
-        var flag = JsonConvert.DeserializeObject<Flags>(content);
-        var position = flag.BlueFlagBaseLocation.ToVector3();
-        m_flag = Instantiate(flagPrefab, position, Quaternion.identity);
-    }
+        private void InitiateFlag()
+        {
+            var response = m_client.GetAsync("/flags").Result;
+            var content = response.Content.ReadAsStringAsync().Result;
+            var flag = JsonConvert.DeserializeObject<ArHack.Flags>(content);
+            var position = flag.BlueFlagBaseLocation.ToVector3();
+            m_flag = Instantiate(flagPrefab, position, Quaternion.identity);
+        }
 
-    private void Register()
-    {
-        LogAsync("Registering");
-        var player = new Player { Team = Color.Blue };
-        var response = m_client.PostAsync("/players", new StringContent(JsonConvert.SerializeObject(player), Encoding.UTF8, "application/json")).Result;
-        var content = response.Content.ReadAsStringAsync().Result;
-        var players = JsonConvert.DeserializeObject<Player>(content);
-        m_player = players;
-        m_player.Location = new Vec3();
-        m_player.Name = "Moshe";
-    }
+        private void Register()
+        {
+            LogAsync("Registering");
+            var player = new ArHack.Player { Team = ArHack.Color.Blue };
+            var response = m_client.PostAsync("/players", new StringContent(JsonConvert.SerializeObject(player), Encoding.UTF8, "application/json")).Result;
+            var content = response.Content.ReadAsStringAsync().Result;
+            var players = JsonConvert.DeserializeObject<ArHack.Player>(content);
+            m_player = players;
+            m_player.Location = new ArHack.Vec3();
+            m_player.Name = name;
+        }
 
     // Update is called once per frame
     void Update()
@@ -146,34 +149,34 @@ public class ARLocationReporter : MonoBehaviour
             return;
         }
 
-        var otherPlayerData = m_lastGameState.Players;
-        if (otherPlayerData == null)
-        {
-            return;
-        }
-        if (!otherPlayerData.Any(p => p.Id == m_player.Id))
-        {
-            Dead();
-        }
-
-        foreach (var player in otherPlayerData)
-        {
-            if (player.Id == m_player.Id)
+            var otherPlayerData = m_lastGameState.Players;
+            if (otherPlayerData == null)
             {
-                continue;
+                return;
+            }
+            if (!otherPlayerData.Any(p => p.Id == m_player.Id))
+            {
+                Dead();
             }
 
-            if (m_players.ContainsKey(player.Id))
+            foreach (var player in otherPlayerData)
             {
-                m_players[player.Id].transform.position = player.Location.ToVector3();
-            }
-            else
-            {
-                var newPlayer = Instantiate(enemyPrefub, player.Location.ToVector3(), Quaternion.identity);
-                m_players.Add(player.Id, newPlayer);
+                if (player.Id == m_player.Id)
+                {
+                    continue;
+                }
+
+                if (m_players.ContainsKey(player.Id))
+                {
+                    m_players[player.Id].transform.position = player.Location.ToVector3();
+                }
+                else
+                {
+                    var newPlayer = Instantiate(enemyPrefub, player.Location.ToVector3(), Quaternion.identity);
+                    m_players.Add(player.Id, newPlayer);
+                }
             }
         }
-    }
 
     public void Kill(GameObject obj)
     {
@@ -217,28 +220,28 @@ public class ARLocationReporter : MonoBehaviour
         }
     }
 
-    private void Lose()
-    {
-        text.text = "LOSE";
-        text.transform.position = transform.position;
-    }
-
-    private void Win()
-    {
-        text.text = "WIN";
-        text.transform.position = transform.position;
-    }
-
-    private async Task LogAsync(string rec)
-    {
-        try
+        private void Lose()
         {
-            _ = await m_client.PostAsync("/logs", new StringContent($"\"{m_id},{rec}\"", Encoding.UTF8, "application/json"));
+            text.text = "LOSE";
+            text.transform.position = transform.position;
+        }
 
-        }catch(Exception ex)
+        private void Win()
         {
-            Debug.Log(ex);
+            text.text = "WIN";
+            text.transform.position = transform.position;
+        }
+
+        private async Task LogAsync(string rec)
+        {
+            try
+            {
+                _ = await m_client.PostAsync("/logs", new StringContent($"\"{m_id},{rec}\"", Encoding.UTF8, "application/json"));
+
+            }
+            catch (Exception ex)
+            {
+                Debug.Log(ex);
+            }
         }
     }
-}
-
