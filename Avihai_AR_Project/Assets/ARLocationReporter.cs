@@ -110,6 +110,7 @@ public class ARLocationReporter : MonoBehaviour
     {
         Register();
         InitiateFlag();
+        Task.Run(UpdateOffline);
     }
 
     private void InitiateFlag()
@@ -136,13 +137,6 @@ public class ARLocationReporter : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        m_timePassed += Time.deltaTime;
-        if (m_timePassed > 0.1)
-        {
-            Task.Run(UpdateOffline);
-            m_timePassed = 0;
-        }
-
         m_player.Location.X = ARSession.transform.position.x;
         m_player.Location.Y = ARSession.transform.position.y;
         m_player.Location.Z = ARSession.transform.position.z;
@@ -186,20 +180,25 @@ public class ARLocationReporter : MonoBehaviour
         // TODO: Implement dead scenario
     }
 
-    private void UpdateOffline()
+    private async Task UpdateOffline()
     {
-        try
+        while (m_lastGameState == null || m_lastGameState.Status == GameState.GameStatus.Playing)
         {
-            string playerJson = JsonConvert.SerializeObject(m_player);
-            LogAsync("updating:" + playerJson);
-            var content = new StringContent(playerJson, Encoding.UTF8, "application/json");
-            var response = m_client.PutAsync($"/players/{m_player.Id}", content).Result;
-            text.text = $"{response.StatusCode}";
-            var resContent = response.Content.ReadAsStringAsync().Result;
-            m_lastGameState = JsonConvert.DeserializeObject<GameState>(resContent);
-        } catch (Exception ex)
-        {
-            Debug.Log(ex);
+
+            try
+            {
+                string playerJson = JsonConvert.SerializeObject(m_player);
+                await LogAsync("updating:" + playerJson);
+                var content = new StringContent(playerJson, Encoding.UTF8, "application/json");
+                var response = await m_client.PutAsync($"/players/{m_player.Id}", content);
+                text.text = $"{response.StatusCode}";
+                var resContent = response.Content.ReadAsStringAsync().Result;
+                m_lastGameState = JsonConvert.DeserializeObject<GameState>(resContent);
+            } catch (Exception ex)
+            {
+                await LogAsync($"UpdateOffline got exception: {ex}");
+            }
+            await Task.Delay(100);
         }
     }
 
