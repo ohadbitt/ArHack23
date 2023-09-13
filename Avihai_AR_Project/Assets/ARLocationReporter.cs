@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading.Tasks;
 using System.Timers;
 using TMPro;
 using UnityEngine;
@@ -20,7 +21,7 @@ public enum Color
 public class Player
 {
     public int Id { get; set; }
-    public string? Name { get; set; }
+    public string Name { get; set; }
     public Vec3? Location { get; set; }
     public Color Team { get; set; }
     //public int Kills { get; set; } = 0;
@@ -94,6 +95,7 @@ public class ARLocationReporter : MonoBehaviour
     public GameObject enemyPrefub;
     public GameObject flagPrefab;
 
+    private float m_timePassed;
     private Player m_player;
     private readonly Dictionary<int, GameObject> m_players = new();
     private GameObject m_flag;
@@ -108,9 +110,6 @@ public class ARLocationReporter : MonoBehaviour
     {
         Register();
         InitiateFlag();
-        var timer = new Timer();
-        timer.Elapsed += UpdateOffline;
-        timer.Start();
     }
 
     private void InitiateFlag()
@@ -136,9 +135,16 @@ public class ARLocationReporter : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        m_player.Location.X = transform.position.x;
-        m_player.Location.Y = transform.position.y;
-        m_player.Location.Z = transform.position.z;
+        m_timePassed += Time.deltaTime;
+        if (m_timePassed > 0.1)
+        {
+            Task.Run(UpdateOffline);
+            m_timePassed = 0;
+        }
+
+        m_player.Location.X = ARSession.transform.position.x;
+        m_player.Location.Y = ARSession.transform.position.y;
+        m_player.Location.Z = ARSession.transform.position.z;
         if (m_lastGameState.Status != GameState.GameStatus.Playing)
         {
             Win();
@@ -179,13 +185,13 @@ public class ARLocationReporter : MonoBehaviour
         // TODO: Implement dead scenario
     }
 
-    private void UpdateOffline(System.Object source, ElapsedEventArgs e)
+    private void UpdateOffline()
     {
         try
         {
-
             var content = new StringContent(JsonConvert.SerializeObject(m_player), Encoding.UTF8, "application/json");
             var response = m_client.PutAsync($"/players/{m_player.Id}", content).Result;
+            text.text = $"{response.StatusCode}";
             var resContent = response.Content.ReadAsStringAsync().Result;
             m_lastGameState = JsonConvert.DeserializeObject<GameState>(resContent);
         } catch (Exception ex)
