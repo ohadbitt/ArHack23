@@ -26,6 +26,8 @@ namespace ArHack
         public string? Name { get; set; }
         public Vec3? Location { get; set; }
         public Color Team { get; set; }
+        public int Kills { get; set; } = 0;
+
         //public int Kills { get; set; } = 0;
         //public bool Alive { get; set; } = true;
         //// Not in use for first version. Later we can use this to show if a player has the flag or not
@@ -132,11 +134,23 @@ namespace ArHack
             var player = new ArHack.Player { Team = ArHack.Color.Blue };
             var response = m_client.PostAsync("/players", new StringContent(JsonConvert.SerializeObject(player), Encoding.UTF8, "application/json")).Result;
             var content = response.Content.ReadAsStringAsync().Result;
-            var players = JsonConvert.DeserializeObject<ArHack.Player>(content);
-            m_player = players;
+            var res = JsonConvert.DeserializeObject<ArHack.Player>(content);
+            m_player = res;
             m_player.Location = new ArHack.Vec3();
             m_player.Name = name;
-        }
+            if (player.Team == ArHack.Color.Red)
+            {
+                var obj = GameObject.Find("health-blue");
+                obj.SetActive(false);
+            }
+            else
+            {
+                var obj = GameObject.Find("health-red");
+                obj.SetActive(false);
+            }
+
+        
+    }
 
         // Update is called once per frame
         void Update()

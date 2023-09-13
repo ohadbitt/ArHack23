@@ -14,7 +14,7 @@ public class Player
     public string? Name { get; set; }
     public Vec3? Location { get; set; }
     public Color Team { get; set; }
-    //public int Kills { get; set; } = 0;
+    public int Kills { get; set; } = 0;
     //public bool Alive { get; set; } = true;
     //// Not in use for first version. Later we can use this to show if a player has the flag or not
     //public bool HasFlag { get; set; } = false;
