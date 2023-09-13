@@ -81,7 +81,7 @@ public static class GameService
                 if (player.IsCloseToLocation(Flags.RedFlagBaseLocation))
                 {
                     //player.HasFlag = true;
-                    State.Status = GameStatus.RedWin;  // Delete in v1
+                    State.Status = GameStatus.BlueWin;  // Delete in v1
                 }
                 //}
                 break;

@@ -105,6 +105,7 @@ public class ARLocationReporter : MonoBehaviour
     private readonly Dictionary<int, GameObject> m_players = new();
     private GameState m_lastGameState = new();
     private GameObject killsObj;
+    private AudioSource audioSource;
     private readonly HttpClient m_client = new()
     {
         BaseAddress = new Uri("https://arhack2320230904145536.azurewebsites.net"),
@@ -115,7 +116,8 @@ public class ARLocationReporter : MonoBehaviour
     void Start()
     {
         killsObj = GameObject.Find("KillsNumber");
-
+        audioSource = GameObject.Find("DoubleKill").GetComponent<AudioSource>();
+        audioSource.Play(); 
         Register();
         InitiateFlag();
         Task.Run(UpdateOffline);
@@ -214,10 +216,12 @@ public class ARLocationReporter : MonoBehaviour
             m_player.Kills++;
             try
             {
-
-            killsObj.GetComponents<TMPro.TextMeshProUGUI>()[0].text = m_player.Kills.ToString();
+              killsObj.GetComponents<TMPro.TextMeshProUGUI>()[0].text = m_player.Kills.ToString();
             }
             catch { 
+            }
+            if(m_player.Kills == 2) {
+                audioSource.Play();
             }
             //var panel = GameObject.Find("Map").transform.Find("PanelMap").transform.GetComponentsInChildren<Component>().First(c=>c.);
             //var lst = new List<GameObject>();
