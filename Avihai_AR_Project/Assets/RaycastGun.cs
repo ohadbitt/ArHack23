@@ -36,26 +36,33 @@ public class RaycastGun : MonoBehaviour
             laserLine.SetPosition(0, laserOrigin.position);
             Vector3 rayOrigin = playerCamera.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, 0));
             RaycastHit hit;
+            GameObject explode = null;
             if (Physics.Raycast(rayOrigin, playerCamera.transform.forward, out hit, gunRange))
             {
                 laserLine.SetPosition(1, hit.point);
-                Instantiate(explosion, hit.point, Quaternion.identity);
+                explode = Instantiate(explosion, hit.point, Quaternion.identity);
                 kill.Invoke(hit.transform.gameObject);
-                //Destroy(hit.transform.gameObject);
+                //Destroy(explode);
             }
             else
             {
                 laserLine.SetPosition(1, rayOrigin + (playerCamera.transform.forward * gunRange));
             }
-            StartCoroutine(ShootLaser());
+            StartCoroutine(ShootLaser(explode));
         }
     }
 
-    IEnumerator ShootLaser()
+    IEnumerator ShootLaser(GameObject explode)
     {
         laserLine.enabled = true;
         yield return new WaitForSeconds(laserDuration);
         laserLine.enabled = false;
         sound.Play();
+        if (explode != null)
+        {
+            Destroy(explode);
+        }
     }
+
+
 }

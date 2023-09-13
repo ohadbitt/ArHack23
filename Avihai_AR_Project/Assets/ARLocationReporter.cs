@@ -94,6 +94,10 @@ public class ARLocationReporter : MonoBehaviour
     public GameObject redPrefab;
     public GameObject redFlagPrefab;
     public GameObject blueFlagPrefab;
+    public GameObject deadPrefab;
+    public GameObject winPrefab;
+    public GameObject losePrefab;
+
 
     public static string name;
     private Player m_player;
@@ -141,6 +145,10 @@ public class ARLocationReporter : MonoBehaviour
         m_player.Location.X = ARSession.transform.position.x;
         m_player.Location.Y = ARSession.transform.position.y;
         m_player.Location.Z = ARSession.transform.position.z;
+        if (m_player.Location.X == 5)
+        {
+            Dead();
+        }
         if (m_lastGameState.Status != GameState.GameStatus.Playing)
         {
             Win();
@@ -181,15 +189,15 @@ public class ARLocationReporter : MonoBehaviour
     {
         try
         {
-            var playerToKill = m_players.First(x => x.Value == obj).Key;
-            var playterData = m_lastGameState.Players.First(p => p.Id == playerToKill);
+            var playerToKill = m_players.First(x => x.Value == obj);
+            var playterData = m_lastGameState.Players.First(p => p.Id == playerToKill.Key);
             if (playterData.Team == m_player.Team)
             {
                 return;
             }
-            m_client.DeleteAsync($"/players/{playerToKill}");
-            Destroy(obj);
-            m_players.Remove(playerToKill);
+            m_client.DeleteAsync($"/players/{playerToKill.Key}");
+            Destroy(playerToKill.Value);
+            m_players.Remove(playerToKill.Key);
         }
         catch (Exception e)
         {
@@ -199,7 +207,8 @@ public class ARLocationReporter : MonoBehaviour
 
     private void Dead()
     {
-        // TODO: Implement dead scenario
+        Instantiate(deadPrefab);
+        enabled = false;
     }
 
     private async Task UpdateOffline()
@@ -226,13 +235,11 @@ public class ARLocationReporter : MonoBehaviour
 
     private void Lose()
     {
-        text.text = "LOSE";
-        text.transform.position = transform.position;
+        Instantiate(losePrefab);
     }
 
     private void Win()
     {
-        text.text = "WIN";
-        text.transform.position = transform.position;
+        Instantiate(winPrefab);
     }
 }
