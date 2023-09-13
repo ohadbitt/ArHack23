@@ -15,7 +15,7 @@ public class buttonHandler : MonoBehaviour
         }
 
         var obj = GameObject.Find("login");
-        var comp = obj.GetComponent<InputField>();
+        var comp = obj.GetComponents<TMPro.TMP_InputField>()[0];
         if (comp != null)
         {
             ARLocationReporter.name = comp.text;

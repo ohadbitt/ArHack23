@@ -58,7 +58,9 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\2022.3.7f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\buttonHandler.cs" />
     <Compile Include="Assets\Fx Explosion Pack\Script\csMouseOrbit.cs" />
+    <Compile Include="Assets\namechange.cs" />
     <Compile Include="Assets\RaycastGun.cs" />
     <Compile Include="Assets\ARLocationReporter.cs" />
     <Compile Include="Assets\Fx Explosion Pack\Script\DestroyEffect.cs" />

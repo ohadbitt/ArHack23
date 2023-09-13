@@ -12,8 +12,6 @@ using System.Timers;
 using TMPro;
 using UnityEngine;
 
-namespace ArHack
-{
     public enum Color
     {
         Red = 1,
@@ -88,7 +86,6 @@ public class Player
         }
 
     }
-}
     public class ARLocationReporter : MonoBehaviour
     {
         public TextMeshPro text;
@@ -97,7 +94,7 @@ public class Player
         public GameObject flagPrefab;
 
     private float m_timePassed;
-    public static string name = "Moshe";
+    public static string name;
     private Player m_player;
     private readonly Dictionary<int, GameObject> m_players = new();
     private GameObject m_flag;
@@ -120,7 +117,7 @@ public class Player
         {
             var response = m_client.GetAsync("/flags").Result;
             var content = response.Content.ReadAsStringAsync().Result;
-            var flag = JsonConvert.DeserializeObject<ArHack.Flags>(content);
+            var flag = JsonConvert.DeserializeObject<Flags>(content);
             var position = flag.BlueFlagBaseLocation.ToVector3();
             m_flag = Instantiate(flagPrefab, position, Quaternion.identity);
         }
@@ -128,12 +125,12 @@ public class Player
         private void Register()
         {
             LogAsync("Registering");
-            var player = new ArHack.Player { Team = ArHack.Color.Blue };
+            var player = new Player { Team = Color.Blue };
             var response = m_client.PostAsync("/players", new StringContent(JsonConvert.SerializeObject(player), Encoding.UTF8, "application/json")).Result;
             var content = response.Content.ReadAsStringAsync().Result;
-            var players = JsonConvert.DeserializeObject<ArHack.Player>(content);
+            var players = JsonConvert.DeserializeObject<Player>(content);
             m_player = players;
-            m_player.Location = new ArHack.Vec3();
+            m_player.Location = new Vec3();
             m_player.Name = name;
         }
 
@@ -205,6 +202,7 @@ public class Player
 
             try
             {
+                m_player.Name = name;
                 string playerJson = JsonConvert.SerializeObject(m_player);
                 await LogAsync("updating:" + playerJson);
                 var content = new StringContent(playerJson, Encoding.UTF8, "application/json");
