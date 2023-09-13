@@ -175,6 +175,21 @@ public class ARLocationReporter : MonoBehaviour
         }
     }
 
+    public void Kill(GameObject obj)
+    {
+        try
+        {
+            var playerToKill = m_players.First(x => x.Value == obj).Key;
+            m_client.DeleteAsync($"/players/{playerToKill}");
+            Destroy(obj);
+            m_players.Remove(playerToKill);
+        }
+        catch (Exception e)
+        {
+            return;
+        }
+    }
+
     private void Dead()
     {
         // TODO: Implement dead scenario
