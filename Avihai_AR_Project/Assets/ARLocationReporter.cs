@@ -106,6 +106,10 @@ public class ARLocationReporter : MonoBehaviour
     private GameState m_lastGameState = new();
     private GameObject killsObj;
     private AudioSource doubleKillAudioSource;
+    private AudioSource tripleKillAudio;
+    private AudioSource simpleKill;
+    private AudioSource firstBlood;
+    private static bool s_firstBloodAvailable;
     private readonly HttpClient m_client = new()
     {
         BaseAddress = new Uri("https://arhack2320230904145536.azurewebsites.net"),
@@ -116,7 +120,10 @@ public class ARLocationReporter : MonoBehaviour
     void Start()
     {
         killsObj = GameObject.Find("KillsNumber");
-        doubleKillAudioSource = GameObject.Find("DoubleKill").GetComponent<AudioSource>();
+        doubleKillAudioSource = GameObject.Find("DoubleKill").GetComponents<AudioSource>()[0];
+        tripleKillAudio = GameObject.Find("DoubleKill").GetComponents<AudioSource>()[1];
+        simpleKill = GameObject.Find("DoubleKill").GetComponents<AudioSource>()[2];
+        firstBlood = GameObject.Find("DoubleKill").GetComponents<AudioSource>()[3];
         Register();
         InitiateFlag();
         Task.Run(UpdateOffline);
@@ -181,6 +188,10 @@ public class ARLocationReporter : MonoBehaviour
         {
             Dead();
         }
+        if (!otherPlayerData.Any(p => p.Kills > 0))
+        {
+            s_firstBloodAvailable = true;
+        }
 
         foreach (var player in otherPlayerData)
         {
@@ -219,8 +230,20 @@ public class ARLocationReporter : MonoBehaviour
             }
             catch { 
             }
-            if(m_player.Kills == 2) {
+            
+            if (m_player.Kills == 1 && s_firstBloodAvailable)
+            {
+                firstBlood.Play();
+            }
+            else if (m_player.Kills == 2) {
                 doubleKillAudioSource.Play();
+            } 
+            else if(m_player.Kills == 3)
+            {
+                tripleKillAudio.Play();
+            }else
+            {
+                simpleKill.Play();
             }
             //var panel = GameObject.Find("Map").transform.Find("PanelMap").transform.GetComponentsInChildren<Component>().First(c=>c.);
             //var lst = new List<GameObject>();
