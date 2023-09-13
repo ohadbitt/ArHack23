@@ -69,3 +69,10 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+Avihai_AR_Project/Library
+*/Library
+ArHack23/bin/
+ArHack23/obj
+*/[Tt]emp/
+*/[Ll]ogs/

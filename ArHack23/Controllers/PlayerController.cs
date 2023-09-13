@@ -1,6 +1,9 @@
 using ArHack23.Models;
 using ArHack23.Services;
+using Kusto.Data;
+using Kusto.Ingest;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 using static ArHack23.Models.GameState;
 
 namespace ArHack23.Controllers;
@@ -9,8 +12,11 @@ namespace ArHack23.Controllers;
 [Route("Players")]
 public class PlayerController : ControllerBase
 {
+    public static Player lastUp;
+
     public PlayerController()
     {
+      
     }
 
     [HttpGet]
@@ -28,15 +34,16 @@ public class PlayerController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult<GameState> Create(Player player)
+    public ActionResult<Player> Create(Player player)
     {
         GameService.Add(player);
-        return GameService.GetState();
+        return player;
     }
 
     [HttpPut("{id}")]
     public ActionResult<GameState> Update(int id, Player player)
     {
+        lastUp = player;
         if (id != player.Id)
             return BadRequest();
 
@@ -71,12 +78,6 @@ public class PlayerController : ControllerBase
         return NoContent();
     }
 
-    //[Route("kill")] // no need - just update
-    //public ActionResult Kill(int id)
-    //{
-    //    var p = GameService.GetPlayer(id);
-    //    p.Alive = false;
-    //}
     [HttpGet("/flags")]
     public ActionResult<Flags> GetFlags()
     {
@@ -89,4 +90,6 @@ public class PlayerController : ControllerBase
         GameService.SetFlags(flags);
         return NoContent();
     }
+
+  
 }

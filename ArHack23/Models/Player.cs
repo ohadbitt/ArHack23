@@ -19,7 +19,7 @@ public class Player
     //// Not in use for first version. Later we can use this to show if a player has the flag or not
     //public bool HasFlag { get; set; } = false;
 
-    internal void Validate()
+    internal void Validate(int nextId)
     {
         if (Location == null)
         {
@@ -27,7 +27,7 @@ public class Player
         }
         if (!(Team == Color.Red || Team == Color.Blue))
         {
-            throw new InvalidDataException("Color value is either 1 or 2");
+            Team = nextId % 2 == 0 ? Color.Red : Color.Blue;
         }
     }
 

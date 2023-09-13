@@ -38,7 +38,7 @@ public static class GameService
     public static void Add(Player player)
     {
         player.Location = player.Location ?? new Vec3();
-        player.Validate();
+        player.Validate(nextId);
         player.Id = nextId++;
         Players.Add(player);
     }

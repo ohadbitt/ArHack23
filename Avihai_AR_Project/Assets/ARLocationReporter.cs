@@ -28,7 +28,6 @@ public class Player
     //public bool Alive { get; set; } = true;
     //// Not in use for first version. Later we can use this to show if a player has the flag or not
     //public bool HasFlag { get; set; } = false;
-
     internal void Validate()
     {
         if (Location == null)
@@ -104,6 +103,7 @@ public class ARLocationReporter : MonoBehaviour
     {
         BaseAddress = new Uri("https://arhack2320230904145536.azurewebsites.net"),
     };
+    private readonly string m_id = Guid.NewGuid().ToString();
 
     // Start is called before the first frame update
     void Start()
@@ -123,6 +123,7 @@ public class ARLocationReporter : MonoBehaviour
 
     private void Register()
     {
+        LogAsync("Registering");
         var player = new Player { Team = Color.Blue };
         var response = m_client.PostAsync("/players", new StringContent(JsonConvert.SerializeObject(player), Encoding.UTF8, "application/json")).Result;
         var content = response.Content.ReadAsStringAsync().Result;
@@ -189,7 +190,9 @@ public class ARLocationReporter : MonoBehaviour
     {
         try
         {
-            var content = new StringContent(JsonConvert.SerializeObject(m_player), Encoding.UTF8, "application/json");
+            string playerJson = JsonConvert.SerializeObject(m_player);
+            LogAsync("updating:" + playerJson);
+            var content = new StringContent(playerJson, Encoding.UTF8, "application/json");
             var response = m_client.PutAsync($"/players/{m_player.Id}", content).Result;
             text.text = $"{response.StatusCode}";
             var resContent = response.Content.ReadAsStringAsync().Result;
@@ -210,6 +213,18 @@ public class ARLocationReporter : MonoBehaviour
     {
         text.text = "WIN";
         text.transform.position = transform.position;
+    }
+
+    private async Task LogAsync(string rec)
+    {
+        try
+        {
+            _ = await m_client.PostAsync("/logs", new StringContent($"\"{m_id},{rec}\"", Encoding.UTF8, "application/json"));
+
+        }catch(Exception ex)
+        {
+            Debug.Log(ex);
+        }
     }
 }
 
